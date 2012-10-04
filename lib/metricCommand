@@ -3,6 +3,7 @@ var util = require("util");
 /*
   DRBD Metric Command class
 */
+METRIC={};
 
 METRIC.Command = function(args) {
   this.args = null;
