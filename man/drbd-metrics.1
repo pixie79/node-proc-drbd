@@ -1,0 +1,23 @@
+.\" Process this file with
+.\" groff -man -Tascii drbd-metrics1.man
+.\"
+.TH DRBD-METRICS 1 "OCTOBER 2012" DRBD-METRICS
+.SH NAME
+drbd metrics gather
+.SH SYNOPSIS
+.B drbd-metrics [options] [output fields]
+.B ...
+.SH DESCRIPTION
+.B
+drbd-metrics outputs the metrics from /proc/drbd for each resource for sensu.
+.SH OPTIONS
+.IP -h
+print help info and exit. 
+.IP -v (-V | --version)
+print version number and exit. 
+.IP -d
+print debugging output including exception messages.
+.SH BUGS
+Email bug reports to pixie79.me.com.
+.SH AUTHOR
+Mark Olliver

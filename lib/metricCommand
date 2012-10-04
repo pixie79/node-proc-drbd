@@ -1,0 +1,100 @@
+var util = require("util");
+
+/*
+  DRBD Metric Command class
+*/
+
+METRIC.Command = function(args) {
+  this.args = null;
+  this.debugOn = false;
+  this.conditionals = [];
+  this.executables = [];
+  this.stdin = null;
+  this.buffer = "";
+  if (args) { this.processArgs(args); }
+};
+
+METRIC.Command.prototype.printhelp = function() {
+  console.log("Usage: stdout_generator | drbd-metric [options]");
+  console.log("");
+  console.log("options:\n");
+  console.log("  -h           print this help info\n");
+  console.log("  -v           print version information\n");
+  console.log("  -d           print debugging output\n");
+  process.exit();
+};
+
+METRIC.Command.prototype.printversion = function() {
+  var npm = require("npm");
+  npm.load([], function(er) {
+    console.log("drbd-metric version: ");
+    npm.commands.view([ "drbd-metric", "version" ], function(er,data) {
+      process.exit();
+    });
+  });
+};
+
+METRIC.Command.prototype.stringify = function(obj) {
+  return( this.inspectOutput ? util.inspect(obj, false, Infinity, true)
+        : this.uglyOutput ? METRIC.stringify(obj)
+        : METRIC.stringify(obj, null, 2) );
+};
+
+METRIC.Command.prototype.debug = function(msg) {
+  if (this.debugOn) { console.log(msg); }
+};
+
+METRIC.Command.prototype.printex = function(ex) {
+  this.debug("ex: " + METRIC.stringify(ex, null, 2));
+};
+
+
+/*
+  Process Command line arguments to METRIC Command
+*/
+
+METRIC.Command.prototype.processArgs = function processArgs(args) {
+
+  // copy argv to chop it up
+  var a = args.slice(0);
+  // turn -iH into -i -H
+  // nb: don't cache length.  it may change.
+  for (var i = 0; i < a.length; i ++) {
+    if (a[i].charAt(0) === "-" && a[i].length > 2) {
+      var arg = a[i].replace(/^-+/, "").split("").map(function (a) {
+        return "-" + a;
+      });
+      a.splice.apply(a, [i, 1].concat(arg));
+    }
+  }
+
+  while (a.length > 0) {
+    var arg = a.shift();
+    switch(arg) {
+      case "-h": // display help and exit
+        this.printhelp();
+        break;
+      case "-v": // display version and exit
+      case "-V":
+      case "--version":
+        this.printversion();
+        break;
+      case "-d": // debug
+        this.debugOn = true;
+        break;
+      default: // json object keys
+        if (arg.match("=")) {
+          var kk = arg.split("=");
+          this.keys.push(kk[0]);
+          this.transformedKeys.push({ 
+            newKey : kk[0],
+            oldKey : kk[1]
+          });
+        }
+        else {
+          this.keys.push(arg);
+        }
+        break;
+    } 
+  }
+};
