@@ -1,4 +1,5 @@
 var util = require("util");
+METRIC={};
 
 /*
   DRBD Metric Command class
@@ -34,18 +35,21 @@ METRIC.Command.prototype.printversion = function() {
   });
 };
 
-METRIC.Command.prototype.stringify = function(obj) {
-  return( this.inspectOutput ? util.inspect(obj, false, Infinity, true)
-        : this.uglyOutput ? METRIC.stringify(obj)
-        : METRIC.stringify(obj, null, 2) );
-};
-
 METRIC.Command.prototype.debug = function(msg) {
   if (this.debugOn) { console.log(msg); }
 };
 
-METRIC.Command.prototype.printex = function(ex) {
-  this.debug("ex: " + METRIC.stringify(ex, null, 2));
+/*
+  Read /proc/drbd
+*/
+
+METRIC.Command.prototype.readproc = function() {
+  var fs = require('fs');
+  fs.readFile('/proc/drbd', function(err, data) {
+  if (err) throw err;
+    if (this.debugOn) console.log(data);
+  });
+  process.exit();
 };
 
 
@@ -82,19 +86,67 @@ METRIC.Command.prototype.processArgs = function processArgs(args) {
       case "-d": // debug
         this.debugOn = true;
         break;
-      default: // json object keys
-        if (arg.match("=")) {
-          var kk = arg.split("=");
-          this.keys.push(kk[0]);
-          this.transformedKeys.push({ 
-            newKey : kk[0],
-            oldKey : kk[1]
-          });
-        }
-        else {
-          this.keys.push(arg);
-        }
+      default: // read drbd
+        this.readproc();
         break;
     } 
   }
 };
+
+METRIC.Command.prototype.processInput = function() {
+  this.stdin = process.openStdin();
+  this.stdin.setEncoding("utf8");
+  this.stdin.metricC = this; // context for closure
+
+  this.stdin.on("data", function(chunk) {
+    this.metricC.buffer += chunk;
+    if (this.metricC.inputIsArray) return;
+
+    var objects = null;
+    if (this.metricC.buffer.match(/\n/g) || 
+        this.metricC.buffer.match(/\r\n/g) || 
+        this.metricC.buffer.match(/\0/g) || 
+        this.metricC.buffer.match("}{")) {
+      if (this.metricC.buffer.match(/\n/g)) {
+        objects = this.metricC.buffer.split("\n");
+      }
+      if (this.metricC.buffer.match(/\r\n/g)) {
+        objects = this.metricC.buffer.split("\r\n");
+      }
+      if (this.metricC.buffer.match(/\0/g)) {
+        objects = this.metricC.buffer.split("\0");
+      }
+      if (this.metricC.buffer.match("}{")) {
+        objects = this.metricC.buffer.split("}{").join("}\n{").split("\n");
+      }
+
+      this.metricC.buffer = objects.pop();
+
+      if (this.metricC.headerPassthrough) {
+        for (var i = 0, l = objects.length; i < l; i ++) {
+          process.stdout.write(objects[i]+"\r\n");
+          if (objects[i] === "") {
+            this.metricC.headerPassthrough = false;
+            break;
+          }
+        }
+        objects.splice(0, i);
+      }
+
+      if (objects.length) this.metricC.processObjects(objects);
+    }
+  });
+
+  var handleEPIPE = function(e) {
+    if (e.code !== "EPIPE") {
+      process.emit("error", e);
+    }
+  };
+  process.stdout.on("error", handleEPIPE);
+
+  this.stdin.on("end", function() {
+    this.metricC.processObjects([this.metricC.buffer, null]);
+    process.stdout.removeListener("error", handleEPIPE);
+  });
+};
+
