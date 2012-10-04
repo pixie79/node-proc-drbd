@@ -46,9 +46,20 @@ METRIC.Command.prototype.debug = function(msg) {
 
 METRIC.Command.prototype.readproc = function() {
   var fs = require('fs');
+  var drbd_data;
+  console.log("about to read drbd\n");
   fs.readFile('/proc/drbd', function(err, data) {
-  if (err) throw err;
-    if (this.debugOn) console.log(data);
+    console.log("read before error\n");
+    if (err) throw err;
+    console.log("reading\n");
+    console.log(data);
+    drbd_data = data;
+  });
+  if (this.debugOn) console.log(drbd_data);
+  console.log("drbd section complete\n");
+  fs.writeFile('message.txt', 'Hello Node', function (err) {
+    if (err) throw err;
+    console.log('It\'s saved!');
   });
   process.exit();
 };
@@ -95,6 +106,7 @@ METRIC.Command.prototype.processArgs = function processArgs(args) {
 };
 
 METRIC.Command.prototype.processInput = function() {
+/*
   this.stdin = process.openStdin();
   this.stdin.setEncoding("utf8");
   this.stdin.metricC = this; // context for closure
@@ -149,5 +161,6 @@ METRIC.Command.prototype.processInput = function() {
     this.metricC.processObjects([this.metricC.buffer, null]);
     process.stdout.removeListener("error", handleEPIPE);
   });
+*/
 };
 
