@@ -1,0 +1,77 @@
+var fs = require('fs');
+
+exports.read = function (callback) {
+  var drbddata = new String;
+  var drbdversion = new String;
+  drbdstats = new Array;
+  drbddata = readData(callback);
+  console.log(drbddata);
+  drbdversion = parseDataVersion(drbddata, callback);
+  console.log(drbdversion);
+  drbdstats = parseData(drbddata, callback);
+  console.log(drbdstats);
+  callback(drbdstats);
+}
+
+function readData(callback) {
+  fs.readFile('/proc/drbd', encoding='utf8', function(err, data) {
+    if (err) throw err;
+    callback(data);
+  });
+}
+
+function parseData(data, callback) {
+  data = data.replace(/(.+\n){1,2}/, '');
+  data = data.replace(/(\r\n|\n|\r)/gm," ");
+  data = data.replace(/\s+/g," ");
+  var dataA = data.split(/(\d+:\scs:)/);
+  var dataB = new Array();
+  var i = 1;
+  while (i < dataA.length) {
+    var tmp = new String;
+    tmp = dataA[i].concat(dataA[i + 1]);
+    tmp = tmp.replace(/([rs])([a-])([p-])([u-])([abdn-])([s-])/,'io_suspension: $1, serial_resynchronization: $2, peer_initiated_sync: $3, locally_initiated_sync: $4, locally_blocked_io: $5, activity_log_update_suspension: $6');
+    tmp = tmp.replace(/-/gm,'NULL');
+    tmp = tmp.replace(/(\b)/gm,'\"');
+    tmp = tmp.replace(/(\"\/\")/gm,'\/');
+    tmp = tmp.replace(/\"cs/,'\{ \"state\"\: \{\"cs');
+    tmp = tmp.replace(/\s\"ro/,'\, \"ro');
+    tmp = tmp.replace(/\s\"ds/,'\, \"ds');
+    tmp = tmp.replace(/\"ns/,'\}, \"performance\"\: \{\"ns');
+    tmp = tmp.replace(/\s\"nr/,'\, \"nr');
+    tmp = tmp.replace(/\s\"dw/,'\, \"dw');
+    tmp = tmp.replace(/\s\"dr/,'\, \"dr');
+    tmp = tmp.replace(/\s\"al/,'\, \"al');
+    tmp = tmp.replace(/\s\"bm/,'\, \"bm');
+    tmp = tmp.replace(/\s\"lo\"/,'\, \"lo\"');
+    tmp = tmp.replace(/\s\"pe\"/,'\, \"pe\"');
+    tmp = tmp.replace(/\s\"ua/,'\, \"ua');
+    tmp = tmp.replace(/\s\"ap/,'\, \"ap');
+    tmp = tmp.replace(/\s\"ep/,'\, \"ep');
+    tmp = tmp.replace(/\s\"wo/,'\, \"wo');
+    tmp = tmp.replace(/\s\"oos\"/,'\, \"oos\"');
+    tmp = tmp.replace(/\"resync\"\:/,'\}, \"resync\"\: \{');
+    tmp = tmp.replace(/\s\"hits/gm,'\, \"hits');
+    tmp = tmp.replace(/\s\"misses\"/gm,'\, \"misses\"');
+    tmp = tmp.replace(/\s\"starving/gm,'\, \"starving');
+    tmp = tmp.replace(/\s\"locked/gm,'\, \"locked');
+    tmp = tmp.replace(/\s\"changed/gm,'\, \"changed');
+    tmp = tmp.replace(/\"act\_log\"\:/,'\}, \"act\_log\"\: \{');
+    tmp = tmp.replace(/^\"/,'\{\"drbd');
+    tmp = tmp.replace(/$/,'\}\}\}');
+    tmp = tmp.replace(/\"([ABC]\")/,',\"mode\"\: \"$1\}, \"IO\"\: \{');
+    tmp = tmp.replace(/\s/gm,'');
+    dataB.push(tmp);
+    i ++;
+    i ++;
+  };
+  callback(dataB);
+}
+
+
+function parseDataVersion(data, callback) {
+  var drbdVersion = new String;
+  drbdVersion = "drbd.version\: ";
+  drbdVersion = drbdVersion.concat(data.substr(9,5));
+  //callback(drbdVersion);
+}
