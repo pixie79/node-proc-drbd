@@ -1,34 +1,29 @@
 var fs = require('fs');
 
-exports.read = function (callback) {
-  var drbddata = new String;
-  var drbdversion = new String;
-  drbdstats = new Array;
-  drbddata = readData(callback);
-  console.log(drbddata);
-  drbdversion = parseDataVersion(drbddata, callback);
-  console.log(drbdversion);
-  drbdstats = parseData(drbddata, callback);
-  console.log(drbdstats);
-  callback(drbdstats);
+exports.doit = function (callback) {
+  readData(callback);
 }
 
 function readData(callback) {
   fs.readFile('/proc/drbd', encoding='utf8', function(err, data) {
     if (err) throw err;
-    callback(data);
+    var drbdversion = "";
+    var drbdstats = [];
+    drbdversion = parseDataVersion(err, data, callback);
+    drbdstats = parseData(err, data, callback);
   });
 }
 
-function parseData(data, callback) {
+function parseData(err,data, callback) {
+  if (err) throw err;
   data = data.replace(/(.+\n){1,2}/, '');
   data = data.replace(/(\r\n|\n|\r)/gm," ");
   data = data.replace(/\s+/g," ");
   var dataA = data.split(/(\d+:\scs:)/);
-  var dataB = new Array();
+  var dataB = [];
   var i = 1;
   while (i < dataA.length) {
-    var tmp = new String;
+    var tmp = "";
     tmp = dataA[i].concat(dataA[i + 1]);
     tmp = tmp.replace(/([rs])([a-])([p-])([u-])([abdn-])([s-])/,'io_suspension: $1, serial_resynchronization: $2, peer_initiated_sync: $3, locally_initiated_sync: $4, locally_blocked_io: $5, activity_log_update_suspension: $6');
     tmp = tmp.replace(/-/gm,'NULL');
@@ -65,13 +60,14 @@ function parseData(data, callback) {
     i ++;
     i ++;
   };
-  callback(dataB);
+  return callback(dataB);
 }
 
 
-function parseDataVersion(data, callback) {
-  var drbdVersion = new String;
-  drbdVersion = "drbd.version\: ";
-  drbdVersion = drbdVersion.concat(data.substr(9,5));
-  //callback(drbdVersion);
+function parseDataVersion(err, data, callback) {
+  if (err) throw err;
+  var drbdVersion = "";
+  drbdVersion = "\{\"drbd_version\"\:\"";
+  drbdVersion = drbdVersion.concat(data.substr(9,5).concat("\"\}"));
+  callback(drbdVersion);
 }

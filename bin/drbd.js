@@ -3,17 +3,11 @@
 var drbdProc = require('../lib/drbdProc');
 var os = require('os');
 
-drbdProc.read(function(callback){
+drbdProc.doit(function(callback){
   var data = callback;
-  i = 0;
-  while (i < data.length) {
-    console.log(JSON.parse(data[i]));
-    i ++;
-    }
-output();
-});
-
-
+  console.log(data); 
+}); 
+/*
 
 function output(){
   var prefix = new String;
@@ -24,3 +18,5 @@ function output(){
   prefix = prefix.concat(prefixHost[0]);
   console.log(prefix);
 }
+
+*/
