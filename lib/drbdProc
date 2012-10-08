@@ -1,20 +1,29 @@
 var fs = require('fs');
+var async = require('async');
 
 exports.doit = function (callback) {
   readData(callback);
 }
 
 function readData(callback) {
+  var data = "";
   fs.readFile('/proc/drbd', encoding='utf8', function(err, data) {
     if (err) throw err;
-    var drbdversion = "";
-    var drbdstats = [];
-    drbdversion = parseDataVersion(err, data, callback);
-    drbdstats = parseData(err, data, callback);
+    async.parallel([ 
+      function(cb){setTimeout(parseDataVersion(err, data, cb),10);
+      },
+      function(cb){setTimeout(parseData(err, data, cb),10);
+       }
+      ],
+      function(err, results){
+        callback(results);
+        console.log(results);
+      }
+    );
   });
 }
 
-function parseData(err,data, callback) {
+function parseData(err,data, cb) {
   if (err) throw err;
   data = data.replace(/(.+\n){1,2}/, '');
   data = data.replace(/(\r\n|\n|\r)/gm," ");
@@ -60,14 +69,14 @@ function parseData(err,data, callback) {
     i ++;
     i ++;
   };
-  return callback(dataB);
+  return cb(dataB);
 }
 
 
-function parseDataVersion(err, data, callback) {
+function parseDataVersion(err, data, cb) {
   if (err) throw err;
   var drbdVersion = "";
   drbdVersion = "\{\"drbd_version\"\:\"";
   drbdVersion = drbdVersion.concat(data.substr(9,5).concat("\"\}"));
-  callback(drbdVersion);
+  cb(drbdVersion);
 }
