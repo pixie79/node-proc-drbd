@@ -5,8 +5,10 @@ var os = require('os');
 var util = require('util');
 
 drbdProc.doit(function(callback){
-  var data = callback;
-  console.log(data);
+  var drbd = callback;
+  console.log(drbd.drbdinfo.version);
+  console.log(drbd.drbd0.state.cs);
+  console.log(drbd.drbd1.state.cs);
 }); 
 /*
 

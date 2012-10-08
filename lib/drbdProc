@@ -17,8 +17,7 @@ function readData(callback) {
       ],
       function(err, results){
         if (err) callback(err)
-        callback("\{\"drbd\":".concat(results).concat("\}"));
-        //callback(JSON.parse("\{\"drbd\":".concat(results).concat("\}")));
+        callback(JSON.parse("\{\"drbdinfo\":".concat(results).concat("\}")));
       }
     );
   });
@@ -63,27 +62,21 @@ function parseData(err,procdrbd, cb) {
     procdrbdregex = procdrbdregex.replace(/\s\"changed/gm,'\, \"changed');
     procdrbdregex = procdrbdregex.replace(/\"act\_log\"\:/,'\}, \"act\_log\"\: \{');
     procdrbdregex = procdrbdregex.replace(/^\"/,'\"drbd');
-    procdrbdregex = procdrbdregex.replace(/$/,'\}');
+    procdrbdregex = procdrbdregex.replace(/$/,'\}\}');
     procdrbdregex = procdrbdregex.replace(/\"([ABC]\")/,',\"mode\"\: \"$1\}, \"IO\"\: \{');
     procdrbdregex = procdrbdregex.replace(/\s/gm,'');
     procdrbdarray.push(procdrbdregex);
     i ++;
     i ++;
   };
-  i = 0;
-  var terminator = "";
-  while (i < procdrbdarray.length) {
-    terminator = terminator.concat("\}");
-    i ++;
-  };
-  return cb(null, procdrbdarray.toString().concat(terminator));
+  return cb(null, procdrbdarray.toString());
 }
 
 
 function parseDataVersion(err, procdrbd, cb) {
   if (err) cb (err);
   var drbdVersion = "";
-  drbdVersion = "\{\"drbdversion\"\:\"";
+  drbdVersion = "\{\"version\"\:\"";
   drbdVersion = drbdVersion.concat(procdrbd.substr(9,5).concat("\"\}"));
   cb(null, drbdVersion);
 }
