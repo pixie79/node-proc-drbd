@@ -6,77 +6,84 @@ exports.doit = function (callback) {
 }
 
 function readData(callback) {
-  var data = "";
-  fs.readFile('/proc/drbd', encoding='utf8', function(err, data) {
+  var procdrbd = "";
+  fs.readFile('/proc/drbd', encoding='utf8', function(err, procdrbd) {
     if (err) throw err;
     async.parallel([ 
-      function(cb){setTimeout(parseDataVersion(err, data, cb),10);
+      function(cb){parseDataVersion(err, procdrbd, cb);
       },
-      function(cb){setTimeout(parseData(err, data, cb),10);
+      function(cb){parseData(err, procdrbd, cb);
        }
       ],
       function(err, results){
-        callback(results);
-        console.log(results);
+        if (err) callback(err)
+        callback("\{\"drbd\":".concat(results).concat("\}"));
+        //callback(JSON.parse("\{\"drbd\":".concat(results).concat("\}")));
       }
     );
   });
 }
 
-function parseData(err,data, cb) {
-  if (err) throw err;
-  data = data.replace(/(.+\n){1,2}/, '');
-  data = data.replace(/(\r\n|\n|\r)/gm," ");
-  data = data.replace(/\s+/g," ");
-  var dataA = data.split(/(\d+:\scs:)/);
-  var dataB = [];
+function parseData(err,procdrbd, cb) {
+  if (err) cb(err);
+  procdrbd = procdrbd.replace(/(.+\n){1,2}/, '');
+  procdrbd = procdrbd.replace(/(\r\n|\n|\r)/gm," ");
+  procdrbd = procdrbd.replace(/\s+/g," ");
+  var procdrbdsplit = procdrbd.split(/(\d+:\scs:)/);
+  var procdrbdarray = [];
   var i = 1;
-  while (i < dataA.length) {
-    var tmp = "";
-    tmp = dataA[i].concat(dataA[i + 1]);
-    tmp = tmp.replace(/([rs])([a-])([p-])([u-])([abdn-])([s-])/,'io_suspension: $1, serial_resynchronization: $2, peer_initiated_sync: $3, locally_initiated_sync: $4, locally_blocked_io: $5, activity_log_update_suspension: $6');
-    tmp = tmp.replace(/-/gm,'NULL');
-    tmp = tmp.replace(/(\b)/gm,'\"');
-    tmp = tmp.replace(/(\"\/\")/gm,'\/');
-    tmp = tmp.replace(/\"cs/,'\{ \"state\"\: \{\"cs');
-    tmp = tmp.replace(/\s\"ro/,'\, \"ro');
-    tmp = tmp.replace(/\s\"ds/,'\, \"ds');
-    tmp = tmp.replace(/\"ns/,'\}, \"performance\"\: \{\"ns');
-    tmp = tmp.replace(/\s\"nr/,'\, \"nr');
-    tmp = tmp.replace(/\s\"dw/,'\, \"dw');
-    tmp = tmp.replace(/\s\"dr/,'\, \"dr');
-    tmp = tmp.replace(/\s\"al/,'\, \"al');
-    tmp = tmp.replace(/\s\"bm/,'\, \"bm');
-    tmp = tmp.replace(/\s\"lo\"/,'\, \"lo\"');
-    tmp = tmp.replace(/\s\"pe\"/,'\, \"pe\"');
-    tmp = tmp.replace(/\s\"ua/,'\, \"ua');
-    tmp = tmp.replace(/\s\"ap/,'\, \"ap');
-    tmp = tmp.replace(/\s\"ep/,'\, \"ep');
-    tmp = tmp.replace(/\s\"wo/,'\, \"wo');
-    tmp = tmp.replace(/\s\"oos\"/,'\, \"oos\"');
-    tmp = tmp.replace(/\"resync\"\:/,'\}, \"resync\"\: \{');
-    tmp = tmp.replace(/\s\"hits/gm,'\, \"hits');
-    tmp = tmp.replace(/\s\"misses\"/gm,'\, \"misses\"');
-    tmp = tmp.replace(/\s\"starving/gm,'\, \"starving');
-    tmp = tmp.replace(/\s\"locked/gm,'\, \"locked');
-    tmp = tmp.replace(/\s\"changed/gm,'\, \"changed');
-    tmp = tmp.replace(/\"act\_log\"\:/,'\}, \"act\_log\"\: \{');
-    tmp = tmp.replace(/^\"/,'\{\"drbd');
-    tmp = tmp.replace(/$/,'\}\}\}');
-    tmp = tmp.replace(/\"([ABC]\")/,',\"mode\"\: \"$1\}, \"IO\"\: \{');
-    tmp = tmp.replace(/\s/gm,'');
-    dataB.push(tmp);
+  while (i < procdrbdsplit.length) {
+    var procdrbdregex = "";
+    procdrbdregex = procdrbdsplit[i].concat(procdrbdsplit[i + 1]);
+    procdrbdregex = procdrbdregex.replace(/([rs])([a-])([p-])([u-])([abdn-])([s-])/,'io_suspension: $1, serial_resynchronization: $2, peer_initiated_sync: $3, locally_initiated_sync: $4, locally_blocked_io: $5, activity_log_update_suspension: $6');
+    procdrbdregex = procdrbdregex.replace(/-/gm,'NULL');
+    procdrbdregex = procdrbdregex.replace(/(\b)/gm,'\"');
+    procdrbdregex = procdrbdregex.replace(/(\"\/\")/gm,'\/');
+    procdrbdregex = procdrbdregex.replace(/\"cs/,'\{ \"state\"\: \{\"cs');
+    procdrbdregex = procdrbdregex.replace(/\s\"ro/,'\, \"ro');
+    procdrbdregex = procdrbdregex.replace(/\s\"ds/,'\, \"ds');
+    procdrbdregex = procdrbdregex.replace(/\"ns/,'\}, \"performance\"\: \{\"ns');
+    procdrbdregex = procdrbdregex.replace(/\s\"nr/,'\, \"nr');
+    procdrbdregex = procdrbdregex.replace(/\s\"dw/,'\, \"dw');
+    procdrbdregex = procdrbdregex.replace(/\s\"dr/,'\, \"dr');
+    procdrbdregex = procdrbdregex.replace(/\s\"al/,'\, \"al');
+    procdrbdregex = procdrbdregex.replace(/\s\"bm/,'\, \"bm');
+    procdrbdregex = procdrbdregex.replace(/\s\"lo\"/,'\, \"lo\"');
+    procdrbdregex = procdrbdregex.replace(/\s\"pe\"/,'\, \"pe\"');
+    procdrbdregex = procdrbdregex.replace(/\s\"ua/,'\, \"ua');
+    procdrbdregex = procdrbdregex.replace(/\s\"ap/,'\, \"ap');
+    procdrbdregex = procdrbdregex.replace(/\s\"ep/,'\, \"ep');
+    procdrbdregex = procdrbdregex.replace(/\s\"wo/,'\, \"wo');
+    procdrbdregex = procdrbdregex.replace(/\s\"oos\"/,'\, \"oos\"');
+    procdrbdregex = procdrbdregex.replace(/\"resync\"\:/,'\}, \"resync\"\: \{');
+    procdrbdregex = procdrbdregex.replace(/\s\"hits/gm,'\, \"hits');
+    procdrbdregex = procdrbdregex.replace(/\s\"misses\"/gm,'\, \"misses\"');
+    procdrbdregex = procdrbdregex.replace(/\s\"starving/gm,'\, \"starving');
+    procdrbdregex = procdrbdregex.replace(/\s\"locked/gm,'\, \"locked');
+    procdrbdregex = procdrbdregex.replace(/\s\"changed/gm,'\, \"changed');
+    procdrbdregex = procdrbdregex.replace(/\"act\_log\"\:/,'\}, \"act\_log\"\: \{');
+    procdrbdregex = procdrbdregex.replace(/^\"/,'\"drbd');
+    procdrbdregex = procdrbdregex.replace(/$/,'\}');
+    procdrbdregex = procdrbdregex.replace(/\"([ABC]\")/,',\"mode\"\: \"$1\}, \"IO\"\: \{');
+    procdrbdregex = procdrbdregex.replace(/\s/gm,'');
+    procdrbdarray.push(procdrbdregex);
     i ++;
     i ++;
   };
-  return cb(dataB);
+  i = 0;
+  var terminator = "";
+  while (i < procdrbdarray.length) {
+    terminator = terminator.concat("\}");
+    i ++;
+  };
+  return cb(null, procdrbdarray.toString().concat(terminator));
 }
 
 
-function parseDataVersion(err, data, cb) {
-  if (err) throw err;
+function parseDataVersion(err, procdrbd, cb) {
+  if (err) cb (err);
   var drbdVersion = "";
-  drbdVersion = "\{\"drbd_version\"\:\"";
-  drbdVersion = drbdVersion.concat(data.substr(9,5).concat("\"\}"));
-  cb(drbdVersion);
+  drbdVersion = "\{\"drbdversion\"\:\"";
+  drbdVersion = drbdVersion.concat(procdrbd.substr(9,5).concat("\"\}"));
+  cb(null, drbdVersion);
 }

@@ -2,10 +2,11 @@
 
 var drbdProc = require('../lib/drbdProc');
 var os = require('os');
+var util = require('util');
 
 drbdProc.doit(function(callback){
   var data = callback;
-  console.log(data); 
+  console.log(data);
 }); 
 /*
 
