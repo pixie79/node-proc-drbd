@@ -1,0 +1,29 @@
+var fs = require('fs');
+var async = require('async');
+
+exports.doit = function (callback) {
+  readData(callback);
+}
+
+function readData(callback) {
+  var drbdconfig = "";
+  fs.readFile('config.json', encoding='utf8', function(err, drbdconfig) {
+    if (err) throw err;
+    async.parallel([ 
+      function(cb){parseConfig(err, JSON.parse(drbdconfig), cb);
+      },
+      ],
+      function(err, results){
+        if (err) callback(err)
+        callback(results);
+      }
+    );
+  });
+}
+
+function parseConfig(err, drbdconfig, cb) {
+  if (err) cb (err);
+  var disk = drbdconfig["drbdconfig"]["disks"];
+  disk = disk.replace(/\s/gm,(''));
+  cb(null, disk);
+}

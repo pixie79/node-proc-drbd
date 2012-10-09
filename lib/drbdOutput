@@ -1,13 +1,19 @@
 "use strict";
 var drbdProc = require('../lib/drbdProc');
+var drbdConfig = require('../lib/drbdConfig');
 var timestamp = Date.now();
 
 function resultFor(drbd, ref) {
   var result, refsplit = ref.split('.'), refLength = refsplit.length - 1, i = 0;
   while (i < refsplit.length) {
-    drbd = drbd[refsplit[i]];
-    if (refsplit[i] === refsplit[refLength]) {
-      result = refsplit.join().replace(/,/gm, ('.')) + ": " + drbd;
+    if (drbd[refsplit[i]]){
+      drbd = drbd[refsplit[i]];
+      if (refsplit[i] === refsplit[refLength]) {
+        result = refsplit.join().replace(/,/gm, ('.')) + ": " + drbd;
+        result = result.concat(" " + timestamp);
+      }
+    } else {
+      result = refsplit.join().replace(/,/gm, ('.')) + ": 0";
       result = result.concat(" " + timestamp);
     }
     i = i + 1;
@@ -15,28 +21,28 @@ function resultFor(drbd, ref) {
   return (false, result);
 }
 
-function outputMetrics(drbd) {
+function outputMetrics(drbd, disks) {
   var output = [];
-  output.push(resultFor(drbd, "drbd0.performance.ns"));
-  output.push(resultFor(drbd, "drbd0.performance.ns"));
-  output.push(resultFor(drbd, "drbd0.performance.nr"));
-  output.push(resultFor(drbd, "drbd0.performance.dw"));
-  output.push(resultFor(drbd, "drbd0.performance.dr"));
-  output.push(resultFor(drbd, "drbd0.performance.al"));
-  output.push(resultFor(drbd, "drbd0.performance.bm"));
-  output.push(resultFor(drbd, "drbd0.performance.lo"));
-  output.push(resultFor(drbd, "drbd0.performance.pe"));
-  output.push(resultFor(drbd, "drbd0.performance.ua"));
-  output.push(resultFor(drbd, "drbd0.performance.ap"));
-  output.push(resultFor(drbd, "drbd0.performance.ep"));
-  output.push(resultFor(drbd, "drbd0.performance.oos"));
+  var metrics = ['performance.ns', 'performance.nr', 'performance.dw', 'performance.dr', 'performance.al', 'performance.bm', 'performance.lo', 'performance.pe', 'performance.ua', 'performance.ap', 'performance.ep', 'performance.oos', 'resync.used', 'resync.hits', 'resync.misses', 'resync.starving', 'resync.locked', 'resync.changed', 'act_log.used', 'act_log.hits', 'act_log.misses', 'act_log.starving', 'act_log.locked', 'act_log.changed']
+  disks.forEach(function(disk){
+    metrics.forEach(function(item){
+      var itemstr = disk;
+      itemstr = itemstr.concat("." + item);
+      output.push(resultFor(drbd, itemstr));
+      });
+  });
   return output;
 }
 
 function getData(callback) {
-  drbdProc.doit(function (cb) {
-    var drbd = cb;
-    callback(outputMetrics(drbd, callback));
+  drbdConfig.doit(function (cb) {
+    var drbdconfig = cb;
+    var disks = [];
+    disks = drbdconfig[0].split(',');
+    drbdProc.doit(function (cb) {
+      var drbd = cb;
+      callback(outputMetrics(drbd, disks));
+    });
   });
 }
 

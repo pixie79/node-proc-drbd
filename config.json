@@ -1,0 +1,5 @@
+{
+"drbdconfig": {
+  "disks": "drbd0, drbd1"
+  }
+}
