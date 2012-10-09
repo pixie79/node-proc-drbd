@@ -1,0 +1,54 @@
+var drbdProc = require('../lib/drbdProc');
+var async = require('async');
+
+function resultFor(drbd, ref, res){
+  var result = "";
+  var ref = ref.split('.');
+  var refLength = ref[ref.length-1]
+  i = 0;
+  while (i < ref.length) { 
+    drbd = drbd[ref[i]];
+    if (ref[i] === ref[ref.length-1]){
+//      console.log(ref.join().replace(/,/gm,('.')) + ": " + drbd);
+      return res(ref.join().replace(/,/gm,('.')) + ": " + drbd);
+    }
+    i ++;
+  }
+  return res(null);
+}
+
+function outputMetrics(drbd, callback) {
+  async.parallel([
+   function(res){resultFor(drbd, "drbdinfo.version", res)},
+   function(res){resultFor(drbd, "drbd0.performance.ns", res)},
+   function(res){resultFor(drbd, "drbd0.performance.nr", res)},
+   function(res){resultFor(drbd, "drbd0.performance.dw", res)},
+   function(res){resultFor(drbd, "drbd0.performance.dr", res)},
+   function(res){resultFor(drbd, "drbd0.performance.al", res)},
+   function(res){resultFor(drbd, "drbd0.performance.bm", res)},
+   function(res){resultFor(drbd, "drbd0.performance.lo", res)},
+   function(res){resultFor(drbd, "drbd0.performance.pe", res)},
+   function(res){resultFor(drbd, "drbd0.performance.ua", res)},
+   function(res){resultFor(drbd, "drbd0.performance.ap", res)},
+   function(res){resultFor(drbd, "drbd0.performance.ep", res)},
+   function(res){resultFor(drbd, "drbd0.performance.oos", res)}
+  ],
+  function(err,results){
+    if (err) callback(err)
+    //console.log(results);
+    return callback(results);
+  });
+}
+
+function getData(callback){
+  drbdProc.doit(function(cb){
+  var drbd = cb;
+  output = outputMetrics(drbd, callback); 
+  console.log(output);
+  //callback(output);
+  });
+}
+
+exports.doit = function (callback) {
+  getData(callback);
+}

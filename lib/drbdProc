@@ -35,7 +35,7 @@ function parseData(err,procdrbd, cb) {
     var procdrbdregex = "";
     procdrbdregex = procdrbdsplit[i].concat(procdrbdsplit[i + 1]);
     procdrbdregex = procdrbdregex.replace(/([rs])([a-])([p-])([u-])([abdn-])([s-])/,'io_suspension: $1, serial_resynchronization: $2, peer_initiated_sync: $3, locally_initiated_sync: $4, locally_blocked_io: $5, activity_log_update_suspension: $6');
-    procdrbdregex = procdrbdregex.replace(/-/gm,'NULL');
+    procdrbdregex = procdrbdregex.replace(/-/gm,'null');
     procdrbdregex = procdrbdregex.replace(/(\b)/gm,'\"');
     procdrbdregex = procdrbdregex.replace(/(\"\/\")/gm,'\/');
     procdrbdregex = procdrbdregex.replace(/\"cs/,'\{ \"state\"\: \{\"cs');
