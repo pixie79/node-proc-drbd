@@ -1,82 +1,86 @@
+"use strict";
 var fs = require('fs');
 var async = require('async');
 
-exports.doit = function (callback) {
-  readData(callback);
+function parseData(err, pdrbd, cb) {
+  if (err) {
+    cb(err);
+  }
+  pdrbd = pdrbd.replace(/(\.+\n){1,2}/, '');
+  pdrbd = pdrbd.replace(/(\r\n|\n|\r)/gm, ' ');
+  pdrbd = pdrbd.replace(/\s+/g, ' ');
+  var pdrbdsplit = pdrbd.split(/(\d+:\scs:)/), pdrbdarray = [], i = 1, pregex;
+  while (i < pdrbdsplit.length) {
+    pregex = pdrbdsplit[i].concat(pdrbdsplit[i + 1]);
+    pregex = pregex.replace(/([rs])([a\-])([p\-])([u\-])([abdn\-])([s\-])/, 'io_suspension: $1, serial_resynchronization: $2, peer_initiated_sync: $3, locally_initiated_sync: $4, locally_blocked_io: $5, activity_log_update_suspension: $6');
+    pregex = pregex.replace(/-/gm, 'null');
+    pregex = pregex.replace(/(\b)/gm, '\"');
+    pregex = pregex.replace(/(\"\/\")/gm, '\/');
+    pregex = pregex.replace(/\"cs/, '{ \"state\": {\"cs');
+    pregex = pregex.replace(/\s\"ro/, ', \"ro');
+    pregex = pregex.replace(/\s\"ds/, ', \"ds');
+    pregex = pregex.replace(/\"ns/, '}, \"performance\": {\"ns');
+    pregex = pregex.replace(/\s\"nr/, ', \"nr');
+    pregex = pregex.replace(/\s\"dw/, ', \"dw');
+    pregex = pregex.replace(/\s\"dr/, ', \"dr');
+    pregex = pregex.replace(/\s\"al/, ', \"al');
+    pregex = pregex.replace(/\s\"bm/, ', \"bm');
+    pregex = pregex.replace(/\s\"lo\"/, ', \"lo\"');
+    pregex = pregex.replace(/\s\"pe\"/, ', \"pe\"');
+    pregex = pregex.replace(/\s\"ua/, ', \"ua');
+    pregex = pregex.replace(/\s\"ap/, ', \"ap');
+    pregex = pregex.replace(/\s\"ep/, ', \"ep');
+    pregex = pregex.replace(/\s\"wo/, ', \"wo');
+    pregex = pregex.replace(/\s\"oos\"/, ', \"oos\"');
+    pregex = pregex.replace(/\"resync\"\:/, '}, \"resync\": {');
+    pregex = pregex.replace(/\s\"hits/gm, ', \"hits');
+    pregex = pregex.replace(/\s\"misses\"/gm, ', \"misses\"');
+    pregex = pregex.replace(/\s\"starving/gm, ', \"starving');
+    pregex = pregex.replace(/\s\"locked/gm, ', \"locked');
+    pregex = pregex.replace(/\s\"changed/gm, ', \"changed');
+    pregex = pregex.replace(/\"act\_log\"\:/, '}, \"act_log\": {');
+    pregex = pregex.replace(/^\"/, '\"drbd');
+    pregex = pregex.replace(/$/, '}}');
+    pregex = pregex.replace(/\"([ABC]\")/, ',\"mode\": \"$1}, \"IO\": {');
+    pregex = pregex.replace(/\s/gm, '');
+    pdrbdarray.push(pregex);
+    i = i + 2;
+  }
+  return cb(null, pdrbdarray.toString());
+}
+
+function parseDataVersion(err, pdrbd, cb) {
+  if (err) {
+    cb(err);
+  }
+  var drbdVersion = "";
+  drbdVersion = "{\"version\":\"";
+  drbdVersion = drbdVersion.concat(pdrbd.substr(9, 5).concat("\"}"));
+  cb(null, drbdVersion);
 }
 
 function readData(callback) {
-  var procdrbd = "";
-  fs.readFile('/proc/drbd', encoding='utf8', function(err, procdrbd) {
-    if (err) throw err;
-    async.parallel([ 
-      function(cb){parseDataVersion(err, procdrbd, cb);
-      },
-      function(cb){parseData(err, procdrbd, cb);
-       }
-      ],
-      function(err, results){
-        if (err) callback(err)
-        callback(JSON.parse("\{\"drbdinfo\":".concat(results).concat("\}")));
+  var pdrbd = "";
+  fs.readFile('/proc/drbd', 'utf8', function (err, pdrbd) {
+    if (err) {
+      throw err;
+    }
+    async.parallel([
+      function (cb) {parseDataVersion(err, pdrbd, cb);
+        },
+      function (cb) {parseData(err, pdrbd, cb);
+        }
+    ],
+      function (err, results) {
+        if (err) {
+          callback(err);
+        }
+        callback(JSON.parse("{\"drbdinfo\":".concat(results).concat("}")));
       }
-    );
+      );
   });
 }
 
-function parseData(err,procdrbd, cb) {
-  if (err) cb(err);
-  procdrbd = procdrbd.replace(/(.+\n){1,2}/, '');
-  procdrbd = procdrbd.replace(/(\r\n|\n|\r)/gm," ");
-  procdrbd = procdrbd.replace(/\s+/g," ");
-  var procdrbdsplit = procdrbd.split(/(\d+:\scs:)/);
-  var procdrbdarray = [];
-  var i = 1;
-  while (i < procdrbdsplit.length) {
-    var procdrbdregex = "";
-    procdrbdregex = procdrbdsplit[i].concat(procdrbdsplit[i + 1]);
-    procdrbdregex = procdrbdregex.replace(/([rs])([a-])([p-])([u-])([abdn-])([s-])/,'io_suspension: $1, serial_resynchronization: $2, peer_initiated_sync: $3, locally_initiated_sync: $4, locally_blocked_io: $5, activity_log_update_suspension: $6');
-    procdrbdregex = procdrbdregex.replace(/-/gm,'null');
-    procdrbdregex = procdrbdregex.replace(/(\b)/gm,'\"');
-    procdrbdregex = procdrbdregex.replace(/(\"\/\")/gm,'\/');
-    procdrbdregex = procdrbdregex.replace(/\"cs/,'\{ \"state\"\: \{\"cs');
-    procdrbdregex = procdrbdregex.replace(/\s\"ro/,'\, \"ro');
-    procdrbdregex = procdrbdregex.replace(/\s\"ds/,'\, \"ds');
-    procdrbdregex = procdrbdregex.replace(/\"ns/,'\}, \"performance\"\: \{\"ns');
-    procdrbdregex = procdrbdregex.replace(/\s\"nr/,'\, \"nr');
-    procdrbdregex = procdrbdregex.replace(/\s\"dw/,'\, \"dw');
-    procdrbdregex = procdrbdregex.replace(/\s\"dr/,'\, \"dr');
-    procdrbdregex = procdrbdregex.replace(/\s\"al/,'\, \"al');
-    procdrbdregex = procdrbdregex.replace(/\s\"bm/,'\, \"bm');
-    procdrbdregex = procdrbdregex.replace(/\s\"lo\"/,'\, \"lo\"');
-    procdrbdregex = procdrbdregex.replace(/\s\"pe\"/,'\, \"pe\"');
-    procdrbdregex = procdrbdregex.replace(/\s\"ua/,'\, \"ua');
-    procdrbdregex = procdrbdregex.replace(/\s\"ap/,'\, \"ap');
-    procdrbdregex = procdrbdregex.replace(/\s\"ep/,'\, \"ep');
-    procdrbdregex = procdrbdregex.replace(/\s\"wo/,'\, \"wo');
-    procdrbdregex = procdrbdregex.replace(/\s\"oos\"/,'\, \"oos\"');
-    procdrbdregex = procdrbdregex.replace(/\"resync\"\:/,'\}, \"resync\"\: \{');
-    procdrbdregex = procdrbdregex.replace(/\s\"hits/gm,'\, \"hits');
-    procdrbdregex = procdrbdregex.replace(/\s\"misses\"/gm,'\, \"misses\"');
-    procdrbdregex = procdrbdregex.replace(/\s\"starving/gm,'\, \"starving');
-    procdrbdregex = procdrbdregex.replace(/\s\"locked/gm,'\, \"locked');
-    procdrbdregex = procdrbdregex.replace(/\s\"changed/gm,'\, \"changed');
-    procdrbdregex = procdrbdregex.replace(/\"act\_log\"\:/,'\}, \"act\_log\"\: \{');
-    procdrbdregex = procdrbdregex.replace(/^\"/,'\"drbd');
-    procdrbdregex = procdrbdregex.replace(/$/,'\}\}');
-    procdrbdregex = procdrbdregex.replace(/\"([ABC]\")/,',\"mode\"\: \"$1\}, \"IO\"\: \{');
-    procdrbdregex = procdrbdregex.replace(/\s/gm,'');
-    procdrbdarray.push(procdrbdregex);
-    i ++;
-    i ++;
-  };
-  return cb(null, procdrbdarray.toString());
-}
-
-
-function parseDataVersion(err, procdrbd, cb) {
-  if (err) cb (err);
-  var drbdVersion = "";
-  drbdVersion = "\{\"version\"\:\"";
-  drbdVersion = drbdVersion.concat(procdrbd.substr(9,5).concat("\"\}"));
-  cb(null, drbdVersion);
-}
+exports.doit = function (callback) {
+  readData(callback);
+};
