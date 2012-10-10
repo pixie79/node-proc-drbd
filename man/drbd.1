@@ -1,0 +1,25 @@
+.\" Process this file with
+.\" groff -man -Tascii drbd1.man
+.\"
+.TH DRBD 1 "OCTOBER 2012" DRBD
+.SH NAME
+drbd metrics and status checker
+.SH SYNOPSIS
+.B drbd [options] [output fields]
+.B ...
+.SH DESCRIPTION
+.B
+drbd outputs the metrics from /proc/drbd for each resource for sensu. See Readme
+.SH OPTIONS
+.IP -h
+print help info and exit. (not currently implemented) 
+.IP -s (--scheme)
+Override output scheme naming for metrics. 
+.IP -d
+print debugging output including exception messages.
+.IP -m
+print metrics
+.SH BUGS
+Email bug reports to pixie79.me.com.
+.SH AUTHOR
+Mark Olliver
