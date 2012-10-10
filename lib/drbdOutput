@@ -1,7 +1,7 @@
 "use strict";
 var drbdProc = require('../lib/drbdProc');
 var drbdConfig = require('../lib/drbdConfig');
-var timestamp = Date.now();
+var timestamp = Math.round(Date.now()/1000);
 
 function resultFor(drbd, ref) {
   var result, refsplit = ref.split('.'), refLength = refsplit.length - 1, i = 0;
@@ -9,11 +9,11 @@ function resultFor(drbd, ref) {
     if (drbd[refsplit[i]]) {
       drbd = drbd[refsplit[i]];
       if (refsplit[i] === refsplit[refLength]) {
-        result = refsplit.join().replace(/,/gm, ('.')) + ": " + drbd;
+        result = refsplit.join().replace(/,/gm, ('.')) + " " + drbd;
         result = result.concat(" " + timestamp);
       }
     } else {
-      result = refsplit.join().replace(/,/gm, ('.')) + ": 0";
+      result = refsplit.join().replace(/,/gm, ('.')) + " 0";
       result = result.concat(" " + timestamp);
     }
     i = i + 1;
