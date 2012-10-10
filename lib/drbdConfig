@@ -4,16 +4,16 @@ var async = require('async');
 
 function parseConfig(err, drbdconfig, cb) {
   if (err) {
-    cb(err);
+    return cb(err);
   }
   var disk = drbdconfig.drbdconfig.disks;
   disk = disk.replace(/\s/gm, (''));
   cb(null, disk);
 }
 
-function readData(callback) {
+function readData(config, callback) {
   var drbdconfig = "";
-  fs.readFile('config.json', 'utf8', function (err, drbdconfig) {
+  fs.readFile(config, 'utf8', function (err, drbdconfig) {
     if (err) {
       throw err;
     }
@@ -23,7 +23,7 @@ function readData(callback) {
     ],
       function (err, results) {
         if (err) {
-          callback(err);
+          return callback(err);
         }
         callback(results);
       }
@@ -31,6 +31,6 @@ function readData(callback) {
   });
 }
 
-exports.doit = function (callback) {
-  readData(callback);
+exports.doit = function (config, callback) {
+  readData(config, callback);
 };

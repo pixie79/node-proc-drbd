@@ -41,8 +41,8 @@ function outputMetrics(drbd, disks) {
   return output;
 }
 
-function getData(callback) {
-  drbdConfig.doit(function (cb) {
+function getData(config, callback) {
+  drbdConfig.doit(config, function (cb) {
     var drbdconfig = cb, disks = [];
     disks = drbdconfig[0].split(',');
     drbdProc.doit(function (cb) {
@@ -52,6 +52,6 @@ function getData(callback) {
   });
 }
 
-exports.doit = function (callback) {
-  getData(callback);
+exports.doit = function (config, callback) {
+  getData(config, callback);
 };

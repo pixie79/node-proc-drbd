@@ -17,4 +17,7 @@ A config file is required called config.json, this contains a list of the drbd d
    }
 
 ## To use drbd.js
-drbd.js takes two arguments '-s', '-m', the '-s' is optional and overrides the scheme name for the output of the metrics which is useful for graphite. The '-m' is required and sets drbd.js into metrics output mode instead of checker mode. (yet to be addd)
+drbd.js takes the following arguments:
+* '-s' - This is optional and set the output base name for the metrics,
+* '-m' - Is if you want the metrics output,
+* '-c' - This sets the name and path of the config file and is required unless the config file is in the calling directory,
