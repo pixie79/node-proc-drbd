@@ -6,6 +6,9 @@ function parseData(err, pdrbd, cb) {
   if (err) {
     cb(err);
   }
+  pdrbd = pdrbd.replace(/(\[\>\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\.\]).+\n/, '');
+  pdrbd = pdrbd.replace(/finish.+\n/, '');
+  pdrbd = pdrbd.replace(/\d\% sector.+\n/, '');
   pdrbd = pdrbd.replace(/(\.+\n){1,2}/, '');
   pdrbd = pdrbd.replace(/(\r\n|\n|\r)/gm, ' ');
   pdrbd = pdrbd.replace(/\s+/g, ' ');
