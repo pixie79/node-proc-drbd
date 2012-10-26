@@ -1,13 +1,34 @@
-{ "name": "drbd-metrics"
-, "version": "0.0.1"
-, "engines": [ "node >=0.4.0" ]
-, "description": "DRBD-Metric Gathering"
-, "author": "Mark Olliver <pixie79.me.com> (http://pixie79.com)"
-, "keywords" : [ "drbd" ]
-, "man" : "./man/drbd-metrics.1"
-, "repository":
-  { "type" : "git"
-  , "url" : "https://github.com/pixie79/drbd-metrics.git"
+{
+  "name": "proc-drbd",
+  "version": "0.0.2",
+  "engines": [
+    "node >=0.4.0"
+  ],
+  "description": "DRBD-Metric Gathering",
+  "author": "Mark Olliver <pixie79.me.com> (http://pixie79.com)",
+  "keywords": [
+    "drbd"
+  ],
+  "man": [
+    "./man/drbd-metrics.1"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pixie79/drbd-metrics.git"
+  },
+  "bin": {
+    "drbd-metrics": "./bin/drbd.js"
+  },
+  "main": "bin/drbd.js",
+  "directories": {
+    "man": "man"
+  },
+  "scripts": {
+    "test": "bin/drbd.js -m -s test -c drbd.conf"
+  },
+  "license": "BSD",
+  "dependencies": {
+    "node-getopt": "~0.1.0",
+    "async": "~0.1.22"
   }
-, "bin" : { "drbd-metrics" : "./bin/drbd-metrics.js" }
 }
