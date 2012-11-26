@@ -1,6 +1,6 @@
 {
   "name": "proc-drbd",
-  "version": "0.0.2",
+  "version": "0.0.4",
   "engines": [
     "node >=0.4.0"
   ],
